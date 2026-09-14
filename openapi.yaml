@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: Prismark
+  version: 0.1.0
+  description: >-
+    Pre-deployment multi-label Solidity bytecode vulnerability scanner using
+    colour-encoded CNN classification for compiler-bug families.
+  x-product-slug: ai-decentralized-prismark
+  x-source: ai-in-decentralized+ai/research-paper_1807.01868v1/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Projects
+    description: Tenant projects and gate policies
+  - name: Artefacts
+    description: Bytecode artefacts and build bindings
+  - name: Scans
+    description: Colour-encode and multi-label scan jobs
+  - name: Models
+    description: Classifier model registry and pins
+  - name: Overrides
+    description: Human overrides and disputes
+  - name: Certificates
+    description: Clearance certificates for release
+paths:
+  /v1/projects:
+    get:
+      operationId: listProjects
+      tags: [Projects]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Projects page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeProject" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      operationId: createProject
+      tags: [Projects]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectCreate" }
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeProject" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /v1/projects/{projectId}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: getProject
+      tags: [Projects]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeProject" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateProject
+      tags: [Projects]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectPatch" }
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeProject" }
+  /v1/projects/{projectId}/artefacts:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      operationId: listArtefacts
+      tags: [Artefacts]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Artefacts page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeContractArtefact" }
+    post:
+      operationId: submitArtefact
+      tags: [Artefacts]
+      security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContractArtefactCreate" }
+      responses:
+        "201":
+          description: Artefact accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeContractArtefact" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /v1/artefacts/{artefactId}:
+    parameters:
+      - $ref: "#/components/parameters/ArtefactId"
+    get:
+      operationId: getArtefact
+      tags: [Artefacts]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Artefact
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeContractArtefact" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/scans:
+    post:
+      operationId: createScan
+      tags: [Scans]
+      security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScanJobCreate" }
+      responses:
+        "202":
+          description: Scan accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeScanJob" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+    get:
+      operationId: listScans
+      tags: [Scans]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: projectId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Scans page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeScanJob" }
+  /v1/scans/{scanId}:
+    parameters:
+      - $ref: "#/components/parameters/ScanId"
+    get:
+      operationId: getScan
+      tags: [Scans]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Scan job with labels
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeScanJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/models:
+    get:
+      operationId: listModels
+      tags: [Models]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Models page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeModelVersion" }
+    post:
+      operationId: registerModel
+      tags: [Models]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ModelVersionCreate" }
+      responses:
+        "201":
+          description: Model registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeModelVersion" }
+  /v1/models/{modelId}/promote:
+    parameters:
+      - $ref: "#/components/parameters/ModelId"
+    post:
+      operationId: promoteModel
+      tags: [Models]
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Model promoted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeModelVersion" }
+  /v1/overrides:
+    get:
+      operationId: listOverrides
+      tags: [Overrides]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Overrides page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeOverride" }
+    post:
+      operationId: createOverride
+      tags: [Overrides]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OverrideCreate" }
+      responses:
+        "201":
+          description: Override created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeOverride" }
+  /v1/certificates:
+    post:
+      operationId: issueCertificate
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClearanceCertificateCreate" }
+      responses:
+        "201":
+          description: Certificate issued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeClearanceCertificate" }
+    get:
+      operationId: listCertificates
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Certificates page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeClearanceCertificate" }
+  /v1/certificates/{certificateId}:
+    parameters:
+      - $ref: "#/components/parameters/CertificateId"
+    get:
+      operationId: getCertificate
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Certificate
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeClearanceCertificate" }
+        "404": { $ref: "#/components/responses/NotFound" }
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+    ArtefactId:
+      name: artefactId
+      in: path
+      required: true
+      schema: { type: string }
+    ScanId:
+      name: scanId
+      in: path
+      required: true
+      schema: { type: string }
+    ModelId:
+      name: modelId
+      in: path
+      required: true
+      schema: { type: string }
+    CertificateId:
+      name: certificateId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+    Project:
+      type: object
+      required: [id, name, gateMode]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        gateMode: { type: string, enum: [advisory, blocking] }
+        pinnedModelId: { type: string }
+        failClosedOnLowConfidence: { type: boolean }
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        gateMode: { type: string, enum: [advisory, blocking], default: blocking }
+        failClosedOnLowConfidence: { type: boolean, default: true }
+    ProjectPatch:
+      type: object
+      properties:
+        gateMode: { type: string, enum: [advisory, blocking] }
+        pinnedModelId: { type: string }
+        failClosedOnLowConfidence: { type: boolean }
+    ContractArtefact:
+      type: object
+      required: [id, projectId, bytecodeHash]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        bytecodeHash: { type: string }
+        bytecodeHex: { type: string }
+        buildCommit: { type: string }
+        address: { type: string }
+        createdAt: { type: string, format: date-time }
+    ContractArtefactCreate:
+      type: object
+      required: [bytecodeHex]
+      properties:
+        bytecodeHex: { type: string }
+        buildCommit: { type: string }
+        address: { type: string }
+    BugLabel:
+      type: object
+      required: [family, confidence]
+      properties:
+        family: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        severity: { type: string, enum: [low, medium, high, critical] }
+    ScanJob:
+      type: object
+      required: [id, artefactId, status]
+      properties:
+        id: { type: string }
+        artefactId: { type: string }
+        modelId: { type: string }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        labels:
+          type: array
+          items: { $ref: "#/components/schemas/BugLabel" }
+        gateStatus: { type: string, enum: [pass, fail, low_confidence] }
+        durationMs: { type: integer }
+    ScanJobCreate:
+      type: object
+      required: [artefactId]
+      properties:
+        artefactId: { type: string }
+        modelId: { type: string }
+    ModelVersion:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [candidate, promoted, retired] }
+        precisionByFamily:
+          type: object
+          additionalProperties: { type: number }
+        recallByFamily:
+          type: object
+          additionalProperties: { type: number }
+    ModelVersionCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        precisionByFamily:
+          type: object
+          additionalProperties: { type: number }
+        recallByFamily:
+          type: object
+          additionalProperties: { type: number }
+    Override:
+      type: object
+      required: [id, scanId, rationale]
+      properties:
+        id: { type: string }
+        scanId: { type: string }
+        family: { type: string }
+        rationale: { type: string }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    OverrideCreate:
+      type: object
+      required: [scanId, rationale]
+      properties:
+        scanId: { type: string }
+        family: { type: string }
+        rationale: { type: string }
+    ClearanceCertificate:
+      type: object
+      required: [id, projectId, status]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        scanIds:
+          type: array
+          items: { type: string }
+        modelId: { type: string }
+        status: { type: string, enum: [cleared, blocked, overridden] }
+        issuedAt: { type: string, format: date-time }
+    ClearanceCertificateCreate:
+      type: object
+      required: [projectId, scanIds]
+      properties:
+        projectId: { type: string }
+        scanIds:
+          type: array
+          items: { type: string }
+
+    DataEnvelopeProject:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/Project" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeProject:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Project" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+
+    DataEnvelopeContractArtefact:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/ContractArtefact" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeContractArtefact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/ContractArtefact" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+
+    DataEnvelopeScanJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/ScanJob" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeScanJob:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/ScanJob" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+
+    DataEnvelopeModelVersion:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/ModelVersion" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeModelVersion:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/ModelVersion" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+
+    DataEnvelopeOverride:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/Override" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeOverride:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Override" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+
+    DataEnvelopeClearanceCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/ClearanceCertificate" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeClearanceCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/ClearanceCertificate" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
